@@ -1,34 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNotes } from './useNotes';
-import { logout, auth, initAuth, loginAnonymously } from './lib/firebase';
 import { NoteEditor } from './components/NoteEditor';
 import { NothingButton } from './components/NothingButton';
 import { GoogleTasks } from './components/GoogleTasks';
 import { CameraWidget } from './components/CameraWidget';
-import { Plus, LogOut, FileText, Trash2, PanelLeftClose, PanelLeft, Menu, CheckSquare, Sun, Moon, ScanFace } from 'lucide-react';
+import { Plus, FileText, Trash2, PanelLeftClose, PanelLeft, CheckSquare, Sun, Moon, ScanFace } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 
 export default function App() {
-  const [user, setUser] = useState(auth.currentUser);
   const [isLightMode, setIsLightMode] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = initAuth(
-      (u) => {
-        setUser(u);
-        setLoginError(null);
-        setIsInitialLoading(false);
-      },
-      () => {
-        setUser(null);
-        setIsInitialLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, []);
 
   // Theme effect
   useEffect(() => {
@@ -44,7 +25,7 @@ export default function App() {
     setIsLightMode(!isLightMode);
   };
 
-  const { notes, loading: notesLoading, addNote, updateNote, deleteNoteItem } = useNotes(user?.uid);
+  const { notes, loading: notesLoading, addNote, updateNote, deleteNoteItem } = useNotes('local-user');
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -76,65 +57,6 @@ export default function App() {
 
   const selectedNote = notes.find(n => n.id === selectedNoteId);
 
-  if (isInitialLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ntg-black">
-        <div className="text-center">
-          <div className="text-2xl font-ndot text-ntg-white animate-pulse uppercase tracking-[0.2em]">
-            Loading...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ntg-black p-4 relative overflow-hidden transition-colors duration-300">
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(circle, var(--theme-white) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-        </div>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center z-10"
-        >
-          <h1 className="text-6xl md:text-8xl font-ndot uppercase tracking-[0.2em] text-ntg-white mb-6">
-            Nothi<br className="md:hidden"/>ng<br/><span className="text-ntg-gray">Notes.</span>
-          </h1>
-          <p className="text-xl font-serif text-ntg-light mt-4 mb-12 max-w-md mx-auto leading-relaxed">
-            A minimalist space for your thoughts. Monochromatic, distraction-free, perfectly synced.
-          </p>
-          <NothingButton 
-            onClick={async () => {
-              try {
-                setLoginError(null);
-                await loginAnonymously();
-              } catch (err: any) {
-                console.error('Entry error:', err);
-                setLoginError(err.message || "Failed to enter. Please try again.");
-              }
-            }} 
-            className="text-lg px-8 py-4"
-          >
-            MAKE NOTES
-          </NothingButton>
-
-          {loginError && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-6 text-ntg-red font-ndot text-sm uppercase tracking-wider"
-            >
-              {loginError}
-            </motion.p>
-          )}
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-ntg-black text-ntg-white flex overflow-hidden relative w-full">
       {/* Sidebar List */}
@@ -156,9 +78,6 @@ export default function App() {
               </NothingButton>
               <NothingButton variant="icon" onClick={handleToggleTasks} title="Tasks" className="md:hidden">
                 <CheckSquare size={18} />
-              </NothingButton>
-              <NothingButton variant="icon" onClick={() => logout()} title="Logout">
-                <LogOut size={18} />
               </NothingButton>
             </div>
           </div>

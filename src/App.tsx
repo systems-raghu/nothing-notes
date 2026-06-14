@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 
 export default function App() {
   const [isLightMode, setIsLightMode] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
 
   // Theme effect
   useEffect(() => {
@@ -56,6 +57,35 @@ export default function App() {
   };
 
   const selectedNote = notes.find(n => n.id === selectedNoteId);
+
+  if (!hasEntered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ntg-black p-4 relative overflow-hidden transition-colors duration-300">
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+             style={{ backgroundImage: 'radial-gradient(circle, var(--theme-white) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center z-10"
+        >
+          <h1 className="text-6xl md:text-8xl font-ndot uppercase tracking-[0.2em] text-ntg-white mb-6">
+            Nothi<br className="md:hidden"/>ng<br/><span className="text-ntg-gray">Notes.</span>
+          </h1>
+          <p className="text-xl font-serif text-ntg-light mt-4 mb-12 max-w-md mx-auto leading-relaxed">
+            A minimalist space for your thoughts. Monochromatic, distraction-free, perfectly private.
+          </p>
+          <NothingButton
+            onClick={() => setHasEntered(true)}
+            className="text-lg px-8 py-4"
+          >
+            MAKE NOTES
+          </NothingButton>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-ntg-black text-ntg-white flex overflow-hidden relative w-full">

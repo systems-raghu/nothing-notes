@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User, signInAnonymously } from 'firebase/auth';
+import { getAuth, signOut, onAuthStateChanged, User, signInAnonymously } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -17,9 +17,6 @@ export async function testConnection() {
     }
   }
 }
-
-const provider = new GoogleAuthProvider();
-provider.addScope('https://www.googleapis.com/auth/tasks');
 
 const TOKEN_KEY = 'google_access_token';
 let isSigningIn = false;
@@ -55,29 +52,6 @@ export const loginAnonymously = async () => {
   }
 };
 
-export const loginWithGoogle = async () => {
-  try {
-    isSigningIn = true;
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (!credential?.accessToken) {
-      throw new Error('Failed to get access token from Firebase Auth');
-    }
-    
-    cachedAccessToken = credential.accessToken;
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(TOKEN_KEY, cachedAccessToken);
-    }
-    return { user: result.user, accessToken: cachedAccessToken };
-  } catch (error: any) {
-    if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-      console.error('Sign in error:', error);
-    }
-    throw error;
-  } finally {
-    isSigningIn = false;
-  }
-};
 
 export const getAccessToken = async (): Promise<string | null> => {
   if (!cachedAccessToken && typeof window !== 'undefined') {

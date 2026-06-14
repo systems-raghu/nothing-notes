@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNotes } from './useNotes';
-import { loginWithGoogle, logout, auth, initAuth, loginAnonymously } from './lib/firebase';
+import { logout, auth, initAuth, loginAnonymously } from './lib/firebase';
 import { NoteEditor } from './components/NoteEditor';
 import { NothingButton } from './components/NothingButton';
 import { GoogleTasks } from './components/GoogleTasks';

@@ -1,6 +1,6 @@
 // GoogleTasks export was duplicated, just fixing the file
 import React, { useState, useEffect } from 'react';
-import { getAccessToken, loginWithGoogle } from '../lib/firebase';
+import { getAccessToken } from '../lib/firebase';
 import { NothingButton } from './NothingButton';
 import { CheckSquare, Square, Trash2, Plus, LogOut, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -74,14 +74,8 @@ export const GoogleTasks: React.FC<{onToggle?: () => void}> = ({onToggle}) => {
   }, []);
 
   const handleConnect = async () => {
-    try {
-      await loginWithGoogle();
-      await fetchTasks();
-    } catch (err: any) {
-      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-        console.error("Login failed", err);
-      }
-    }
+    // Disabled as Google Sign-in is removed
+    console.warn("Google Tasks connection is currently disabled.");
   };
 
   const handleToggleTask = async (task: Task) => {
@@ -166,10 +160,7 @@ export const GoogleTasks: React.FC<{onToggle?: () => void}> = ({onToggle}) => {
 
       {needsAuth ? (
         <div className="flex flex-col items-center justify-center p-8 flex-1">
-          <p className="font-serif text-ntg-gray text-center mb-6">Connection to Google Tasks is required.</p>
-          <NothingButton onClick={handleConnect} className="w-full justify-center">
-            Connect Google Tasks
-          </NothingButton>
+          <p className="font-serif text-ntg-gray text-center mb-6 uppercase tracking-widest text-sm">Google Tasks Integration is currently unavailable.</p>
         </div>
       ) : (
         <>

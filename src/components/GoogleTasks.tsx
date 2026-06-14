@@ -29,6 +29,7 @@ export const GoogleTasks: React.FC<{onToggle?: () => void}> = ({onToggle}) => {
         setLoading(false);
         return;
       }
+      setNeedsAuth(false);
 
       const listsRes = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
         headers: { Authorization: `Bearer ${token}` }

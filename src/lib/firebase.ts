@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, signOut, onAuthStateChanged, User, signInAnonymously } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -18,25 +18,17 @@ export async function testConnection() {
   }
 }
 
-const provider = new GoogleAuthProvider();
-provider.addScope('https://www.googleapis.com/auth/tasks');
-
 const TOKEN_KEY = 'google_access_token';
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
 
 export const initAuth = (
-  onAuthSuccess?: (user: User, token: string) => void,
+  onAuthSuccess?: (user: User) => void,
   onAuthFailure?: () => void
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      const token = await getAccessToken();
-      if (token) {
-        if (onAuthSuccess) onAuthSuccess(user, token);
-      } else if (!isSigningIn) {
-        if (onAuthFailure) onAuthFailure();
-      }
+      if (onAuthSuccess) onAuthSuccess(user);
     } else {
       cachedAccessToken = null;
       if (typeof window !== 'undefined') {
@@ -47,29 +39,19 @@ export const initAuth = (
   });
 };
 
-export const loginWithGoogle = async () => {
+export const loginAnonymously = async () => {
   try {
     isSigningIn = true;
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (!credential?.accessToken) {
-      throw new Error('Failed to get access token from Firebase Auth');
-    }
-    
-    cachedAccessToken = credential.accessToken;
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(TOKEN_KEY, cachedAccessToken);
-    }
-    return { user: result.user, accessToken: cachedAccessToken };
+    const result = await signInAnonymously(auth);
+    return { user: result.user };
   } catch (error: any) {
-    if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-      console.error('Sign in error:', error);
-    }
+    console.error('Anonymous sign in error:', error);
     throw error;
   } finally {
     isSigningIn = false;
   }
 };
+
 
 export const getAccessToken = async (): Promise<string | null> => {
   if (!cachedAccessToken && typeof window !== 'undefined') {

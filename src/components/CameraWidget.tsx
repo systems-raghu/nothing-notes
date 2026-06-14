@@ -19,12 +19,17 @@ export const CameraWidget = ({ active, onClose }: { active: boolean, onClose: ()
   useEffect(() => {
     // Load the model
     const loadModel = async () => {
-      setIsModelLoading(true);
-      await tf.ready();
-      // @ts-ignore - handpose.load expects arguments in some versions but works without
-      const loadedModel = await (handpose as any).load();
-      setModel(loadedModel);
-      setIsModelLoading(false);
+      try {
+        setIsModelLoading(true);
+        await tf.ready();
+        // @ts-ignore - handpose.load expects arguments in some versions but works without
+        const loadedModel = await (handpose as any).load();
+        setModel(loadedModel);
+      } catch (err) {
+        console.error("Failed to load handpose model:", err);
+      } finally {
+        setIsModelLoading(false);
+      }
     };
     loadModel();
   }, []);

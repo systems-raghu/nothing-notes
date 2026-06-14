@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNotes } from './useNotes';
-import { loginWithGoogle, logout, auth, initAuth } from './lib/firebase';
+import { logout, auth, initAuth, loginAnonymously } from './lib/firebase';
 import { NoteEditor } from './components/NoteEditor';
 import { NothingButton } from './components/NothingButton';
 import { GoogleTasks } from './components/GoogleTasks';
@@ -13,15 +13,18 @@ export default function App() {
   const [user, setUser] = useState(auth.currentUser);
   const [isLightMode, setIsLightMode] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = initAuth(
       (u) => {
         setUser(u);
         setLoginError(null);
+        setIsInitialLoading(false);
       },
       () => {
         setUser(null);
+        setIsInitialLoading(false);
       }
     );
     return () => unsubscribe();
@@ -41,7 +44,7 @@ export default function App() {
     setIsLightMode(!isLightMode);
   };
 
-  const { notes, loading, addNote, updateNote, deleteNoteItem } = useNotes(user?.uid);
+  const { notes, loading: notesLoading, addNote, updateNote, deleteNoteItem } = useNotes(user?.uid);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isTasksOpen, setIsTasksOpen] = useState(false);
@@ -73,6 +76,18 @@ export default function App() {
 
   const selectedNote = notes.find(n => n.id === selectedNoteId);
 
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ntg-black">
+        <div className="text-center">
+          <div className="text-2xl font-ndot text-ntg-white animate-pulse uppercase tracking-[0.2em]">
+            Loading...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-ntg-black p-4 relative overflow-hidden transition-colors duration-300">
@@ -95,17 +110,15 @@ export default function App() {
             onClick={async () => {
               try {
                 setLoginError(null);
-                await loginWithGoogle();
+                await loginAnonymously();
               } catch (err: any) {
-                if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-                  console.error('Login error:', err);
-                  setLoginError(err.message || "Failed to sign in. Please try again.");
-                }
+                console.error('Entry error:', err);
+                setLoginError(err.message || "Failed to enter. Please try again.");
               }
             }} 
             className="text-lg px-8 py-4"
           >
-            Sign In with Google
+            MAKE NOTES
           </NothingButton>
 
           {loginError && (
@@ -157,7 +170,7 @@ export default function App() {
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
-            {loading ? (
+            {notesLoading ? (
               <div className="text-center p-8 font-ndot text-ntg-gray animate-pulse">LOADING...</div>
             ) : notes.length === 0 ? (
               <div className="text-center p-8 font-serif text-ntg-gray italic">No notes yet. Add one above.</div>

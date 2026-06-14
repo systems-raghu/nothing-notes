@@ -14,14 +14,15 @@ export const CameraWidget = ({ active, onClose }: { active: boolean, onClose: ()
   const [isClicking, setIsClicking] = useState(false);
   const [showTour, setShowTour] = useState(true);
   const [isModelLoading, setIsModelLoading] = useState(false);
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number>(undefined);
 
   useEffect(() => {
     // Load the model
     const loadModel = async () => {
       setIsModelLoading(true);
       await tf.ready();
-      const loadedModel = await handpose.load();
+      // @ts-ignore - handpose.load expects arguments in some versions but works without
+      const loadedModel = await (handpose as any).load();
       setModel(loadedModel);
       setIsModelLoading(false);
     };
@@ -195,7 +196,7 @@ export const CameraWidget = ({ active, onClose }: { active: boolean, onClose: ()
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <NothingButton variant="outline" className="flex-1 py-1 text-xs" onClick={() => setShowTour(false)}>
+                  <NothingButton variant="secondary" className="flex-1 py-1 text-xs" onClick={() => setShowTour(false)}>
                     Skip
                   </NothingButton>
                   <NothingButton className="flex-1 py-1 text-xs" onClick={() => { setGesturesEnabled(true); setShowTour(false); }}>

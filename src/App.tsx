@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNotes } from './useNotes';
-import { loginWithGoogle, logout, auth } from './lib/firebase';
+import { loginWithGoogle, logout, auth, initAuth } from './lib/firebase';
 import { NoteEditor } from './components/NoteEditor';
 import { NothingButton } from './components/NothingButton';
 import { GoogleTasks } from './components/GoogleTasks';
@@ -12,9 +12,19 @@ import { format } from 'date-fns';
 export default function App() {
   const [user, setUser] = useState(auth.currentUser);
   const [isLightMode, setIsLightMode] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
-    return auth.onAuthStateChanged((u) => setUser(u));
+    const unsubscribe = initAuth(
+      (u) => {
+        setUser(u);
+        setLoginError(null);
+      },
+      () => {
+        setUser(null);
+      }
+    );
+    return () => unsubscribe();
   }, []);
 
   // Theme effect
@@ -84,10 +94,12 @@ export default function App() {
           <NothingButton 
             onClick={async () => {
               try {
-                await loginWithGoogle()
+                setLoginError(null);
+                await loginWithGoogle();
               } catch (err: any) {
                 if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
                   console.error('Login error:', err);
+                  setLoginError(err.message || "Failed to sign in. Please try again.");
                 }
               }
             }} 
@@ -95,6 +107,16 @@ export default function App() {
           >
             Sign In with Google
           </NothingButton>
+
+          {loginError && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-6 text-ntg-red font-ndot text-sm uppercase tracking-wider"
+            >
+              {loginError}
+            </motion.p>
+          )}
         </motion.div>
       </div>
     );

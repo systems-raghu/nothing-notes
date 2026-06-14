@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNotes } from './useNotes';
-import { loginWithGoogle, logout, auth, initAuth } from './lib/firebase';
+import { loginWithGoogle, logout, auth, initAuth, loginAnonymously } from './lib/firebase';
 import { NoteEditor } from './components/NoteEditor';
 import { NothingButton } from './components/NothingButton';
 import { GoogleTasks } from './components/GoogleTasks';
@@ -110,17 +110,15 @@ export default function App() {
             onClick={async () => {
               try {
                 setLoginError(null);
-                await loginWithGoogle();
+                await loginAnonymously();
               } catch (err: any) {
-                if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-                  console.error('Login error:', err);
-                  setLoginError(err.message || "Failed to sign in. Please try again.");
-                }
+                console.error('Entry error:', err);
+                setLoginError(err.message || "Failed to enter. Please try again.");
               }
             }} 
             className="text-lg px-8 py-4"
           >
-            Sign In with Google
+            MAKE NOTES
           </NothingButton>
 
           {loginError && (

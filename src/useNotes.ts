@@ -1,100 +1,64 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from 'firebase/firestore';
-import { db, auth, OperationType, handleFirestoreError } from './lib/firebase';
 import { Note } from './types';
+
+const STORAGE_KEY = 'nothing_notes_data';
 
 export function useNotes(userId: string | undefined) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load from localStorage on mount
   useEffect(() => {
-    if (!userId) {
-      setNotes([]);
-      setLoading(false);
-      return;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setNotes(parsed);
+      } catch (e) {
+        console.error("Failed to parse notes from localStorage", e);
+        setNotes([]);
+      }
     }
+    setLoading(false);
+  }, []);
 
-    const q = query(
-      collection(db, 'notes'),
-      where('userId', '==', userId),
-      // order query requires composite index if not standard, but let's sort locally or create index
-      // Using just where and sorting locally to avoid missing index errors initially.
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedNotes = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id,
-        createdAt: doc.data().createdAt?.toMillis() || Date.now(),
-        updatedAt: doc.data().updatedAt?.toMillis() || Date.now(),
-      })) as Note[];
-      
-      // Sort locally descending by updatedAt
-      fetchedNotes.sort((a, b) => b.updatedAt - a.updatedAt);
-      
-      setNotes(fetchedNotes);
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'notes');
-    });
-
-    return () => unsubscribe();
-  }, [userId]);
+  // Sync to localStorage whenever notes change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+    }
+  }, [notes, loading]);
 
   const addNote = async (title: string, content: string, category: string = '') => {
-    if (!userId) return null;
-    const path = 'notes';
-    try {
-      const newRef = doc(collection(db, path));
-      await setDoc(newRef, {
-        title,
-        content,
-        category,
-        userId: userId,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      return newRef.id;
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
-    }
+    const newNote: Note = {
+      id: Math.random().toString(36).substring(2, 9),
+      title,
+      content,
+      category,
+      userId: 'local-user',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    setNotes(prev => [newNote, ...prev]);
+    return newNote.id;
   };
 
   const updateNote = async (id: string, data: Partial<Note>) => {
-    if (!userId) return;
-    const path = 'notes';
-    try {
-      const noteRef = doc(db, path, id);
-      const updateData: any = {
-        ...data,
-        updatedAt: serverTimestamp(),
-      };
-      // prevent immutable fields from being included in diff
-      delete updateData.userId;
-      delete updateData.createdAt;
-      delete updateData.id;
-      
-      // Remove undefined fields
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
-        }
-      });
-      
-      await updateDoc(noteRef, updateData);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
+    setNotes(prev => prev.map(note => {
+      if (note.id === id) {
+        return {
+          ...note,
+          ...data,
+          updatedAt: Date.now(),
+        };
+      }
+      return note;
+    }));
   };
 
   const deleteNoteItem = async (id: string) => {
-    if (!userId) return;
-    const path = 'notes';
-    try {
-      await deleteDoc(doc(db, path, id));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, path);
-    }
+    setNotes(prev => prev.filter(note => note.id !== id));
   };
 
   return { notes, loading, addNote, updateNote, deleteNoteItem };

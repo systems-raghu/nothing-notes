@@ -75,7 +75,7 @@ export const GoogleTasks: React.FC<{onToggle?: () => void}> = ({onToggle}) => {
   const handleConnect = async () => {
     try {
       await loginWithGoogle();
-      fetchTasks();
+      await fetchTasks();
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
         console.error("Login failed", err);

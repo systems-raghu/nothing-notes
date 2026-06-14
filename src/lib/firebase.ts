@@ -4,7 +4,7 @@ import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 
 // Simple connection test
@@ -21,6 +21,7 @@ export async function testConnection() {
 const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/tasks');
 
+const TOKEN_KEY = 'google_access_token';
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
 
@@ -30,14 +31,17 @@ export const initAuth = (
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
+      const token = await getAccessToken();
+      if (token) {
+        if (onAuthSuccess) onAuthSuccess(user, token);
       } else if (!isSigningIn) {
-        cachedAccessToken = null;
         if (onAuthFailure) onAuthFailure();
       }
     } else {
       cachedAccessToken = null;
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(TOKEN_KEY);
+      }
       if (onAuthFailure) onAuthFailure();
     }
   });
@@ -53,6 +57,9 @@ export const loginWithGoogle = async () => {
     }
     
     cachedAccessToken = credential.accessToken;
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(TOKEN_KEY, cachedAccessToken);
+    }
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
     if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
@@ -65,12 +72,18 @@ export const loginWithGoogle = async () => {
 };
 
 export const getAccessToken = async (): Promise<string | null> => {
+  if (!cachedAccessToken && typeof window !== 'undefined') {
+    cachedAccessToken = sessionStorage.getItem(TOKEN_KEY);
+  }
   return cachedAccessToken;
 };
 
 export const logout = async () => {
   await signOut(auth);
   cachedAccessToken = null;
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem(TOKEN_KEY);
+  }
 };
 
 export enum OperationType {

@@ -1,0 +1,6 @@
+{
+  "name": "Nothing Notes",
+  "description": "A web version of Nothing Notes with a minimalist monochromatic interface, dot-matrix headings, markdown support, read mode with annotations, and cloud sync.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

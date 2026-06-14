@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "A minimalist note.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp" },
+        "updatedAt": { "type": "number", "description": "Timestamp" },
+        "annotations": { "type": "string", "description": "JSON stringified drawing strokes" }
+      },
+      "required": ["title", "content", "userId", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/Note" },
+      "description": "User notes"
+    }
+  }
+}
